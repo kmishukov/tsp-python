@@ -70,17 +70,17 @@ def calculate_bound(solution) -> float:
 def make_branches(solution):
     global best_solution_record
     global best_solution
+    if solution.number_of_included_branches() >= matrix_size - 2:
+        include_branches_if_needed(solution)
+        solution_total_bound = solution.current_bound()
+        print("Record achieved:", solution_total_bound)
+        if solution_total_bound < best_solution_record:
+            best_solution_record = solution.current_bound()
+            best_solution = solution
+        return
     for i in range(matrix_size):
         if solution.has_two_adjacents_to_node(i):
             continue
-        if solution.number_of_included_branches() == matrix_size - 2:
-            include_branches_if_needed(solution)
-            solution_total_bound = solution.current_bound()
-            print("Record achieved:", solution_total_bound)
-            if solution_total_bound < best_solution_record:
-                best_solution_record = solution.current_bound()
-                best_solution = solution
-            return
         for j in range(matrix_size):
             if i == j:
                 continue
@@ -180,6 +180,7 @@ class Solution:
     def print_solution(self):
         if self.number_of_included_branches() != matrix_size:
             print('Error: tried printing not complete solution.')
+            return
         path = '0'
         zero_branches = []
         true_branches = []
