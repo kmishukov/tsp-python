@@ -3,6 +3,7 @@
 
 import getopt
 import sys
+import re
 from myQueue import Queue
 
 import numpy as np
@@ -176,6 +177,30 @@ class Solution:
                 number += 1
         return number
 
+    def print_solution(self):
+        if self.number_of_included_branches() != matrix_size:
+            print('Error: tried printing not complete solution.')
+        path = '0'
+        zero_branches = []
+        true_branches = []
+        for branch in self.branches.keys():
+            if self.branches[branch] is True:
+                true_branches.append(branch)
+        for branch in true_branches:
+            if branch.is_incident_to(0):
+                zero_branches.append(branch)
+        current_branch = (zero_branches[0], zero_branches[1])[zero_branches[0].nodeA < zero_branches[1].nodeB]
+        current_node = current_branch.nodeB
+        while current_node != 0:
+            path += str(current_node)
+            for branch in true_branches:
+                if branch.is_incident_to(current_node) and branch != current_branch:
+                    current_node = (branch.nodeA, branch.nodeB)[branch.nodeA == current_node]
+                    current_branch = branch
+                    break
+        path += '0'
+        print("Solution Path:", path)
+
 
 def exclude_branches_for_filled_nodes(solution):
     for i in range(matrix_size):
@@ -257,3 +282,4 @@ if __name__ == '__main__':
         counter += 1
     print('\nAlgorithm finished')
     print('Best solution is: ', best_solution_record)
+    best_solution.print_solution()
