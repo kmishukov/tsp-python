@@ -3,7 +3,9 @@
 
 import getopt
 import sys
-import re
+import time
+from typing import Optional
+
 from myQueue import Queue
 
 import numpy as np
@@ -73,10 +75,11 @@ def make_branches(solution):
     if solution.number_of_included_branches() >= matrix_size - 2:
         include_branches_if_needed(solution)
         solution_total_bound = solution.current_bound()
-        print("Record achieved:", solution_total_bound)
+        print("Tree finished:", solution_total_bound)
         if solution_total_bound < best_solution_record:
             best_solution_record = solution.current_bound()
             best_solution = solution
+            print('Record updated:', best_solution_record)
         return
     for i in range(matrix_size):
         if solution.has_two_adjacents_to_node(i):
@@ -91,20 +94,45 @@ def make_branches(solution):
             new_solution1 = Solution()
             new_solution1.branches = solution.branches.copy()
             new_solution1.branches[current_branch] = True
-            if new_solution1.has_two_adjacents_to_node(i):
-                exclude_possible_short_circuit_at(new_solution1, j)
-            exclude_branches_for_filled_nodes(new_solution1)
+            new_solution1.update_solution_with_missing_branches_if_needed(current_branch)
+
+            # if new_solution1.has_two_adjacents_to_node(i):
+            # exclude_possible_short_circuit_after_adding_branch(new_solution1, current_branch)
+            # exclude_branches_for_filled_nodes(new_solution1)
 
             new_solution2 = Solution()
             new_solution2.branches = solution.branches.copy()
             new_solution2.branches[current_branch] = False
-            include_branches_if_needed(new_solution2)
+            new_solution2.update_solution_with_missing_branches_if_needed(None)
+            # include_branches_if_needed(new_solution2)
 
-            if new_solution1.current_bound() <= best_solution_record:
+            s1_bound = new_solution1.current_bound()
+            if s1_bound <= best_solution_record and new_solution1.impossible is False:
                 solutions_queue.enqueue(new_solution1)
-            if new_solution2.current_bound() <= best_solution_record:
+            else:
+                if new_solution1.impossible is True:
+                    print('Impossible solution, pruned.')
+                else:
+                    print('Solution pruned: ', best_solution_record, "<", new_solution1.current_bound())
+            s2_bound = new_solution2.current_bound()
+            if s2_bound <= best_solution_record and new_solution2.impossible is False:
                 solutions_queue.enqueue(new_solution2)
+            else:
+                if new_solution2.impossible is True:
+                    print('Impossible solution, pruned.')
+                else:
+                    print('Solution pruned: ', best_solution_record, "<", new_solution2.current_bound())
             return
+
+# def update_solution_with_missing_branches(solution):
+#     did_change = True
+#     added_branch = None
+#     while did_change is True:
+#         if added_branch != None:
+#             did_change = exclude_possible_short_circuit_after_adding_branch(added_branch)
+#             added_branch = None
+
+
 
 
 class Branch:
@@ -140,9 +168,8 @@ class Branch:
 
 class Solution:
     def __init__(self):
+        self.impossible = False
         self.branches = dict()
-        self.nodes = dict()
-        self.path = []
 
     def current_bound(self):
         summary = 0
@@ -202,8 +229,28 @@ class Solution:
         path += '0'
         print("Solution Path:", path)
 
+    def update_solution_with_missing_branches_if_needed(self, added_branch):
+        did_change = True
+        did_exclude = False
+        new_branch = added_branch
+        while did_change is True or new_branch is not None or did_exclude is True:
+            did_change = exclude_branches_for_filled_nodes(self)
+            if new_branch is not None:
+                did_exclude = exclude_possible_short_circuit_after_adding_branch(self, new_branch)
+            else:
+                did_exclude = False
+            # if did_exclude is True or did_change is True:
+            new_branch = include_branches_if_needed(self)
+            if new_branch == Branch(-1, -1):
+                self.impossible = True
+                return
+            # else:
+            #     new_branch = None
 
-def exclude_branches_for_filled_nodes(solution):
+
+
+def exclude_branches_for_filled_nodes(solution) -> bool:
+    did_change = False
     for i in range(matrix_size):
         if solution.has_two_adjacents_to_node(i):
             for j in range(matrix_size):
@@ -212,41 +259,61 @@ def exclude_branches_for_filled_nodes(solution):
                 branch_to_exclude = Branch(i, j)
                 if branch_to_exclude not in solution.branches.keys():
                     solution.branches[branch_to_exclude] = False
+                    did_change = True
+    return did_change
 
 
-def include_branches_if_needed(solution):
+
+def include_branches_if_needed(solution) -> Optional[Branch]:
     for i in range(matrix_size):
         number_of_excluded_branches = 0
         for b in solution.branches.keys():
             if b.is_incident_to(i) and solution.branches[b] is False:
                 number_of_excluded_branches += 1
         if number_of_excluded_branches > matrix_size - 3:
-            print("Error in number of excluded branches on node: ", i)
-            sys.exit(2)
+            # print("Error in number of excluded branches on node: ", i)
+            # print('Impossible solution')
+            return Branch(-1, -1)
         if number_of_excluded_branches == matrix_size - 3:
             for j in range(matrix_size):
                 if i == j:
                     continue
                 current_branch = Branch(i, j)
                 if current_branch not in solution.branches.keys():
+                    # print('ibin: adding Branch: ', current_branch)
                     solution.branches[current_branch] = True
-                    if solution.has_two_adjacents_to_node(i):
-                        exclude_possible_short_circuit_at(solution, j)
+                    return current_branch
+                    # if solution.has_two_adjacents_to_node(i):
+                    # exclude_possible_short_circuit_after_adding_branch(solution, current_branch)
+    return None
 
-
-def exclude_possible_short_circuit_at(solution, j):
+def exclude_possible_short_circuit_after_adding_branch(solution, branch: Branch) -> bool:
+    did_exclude = False
     if solution.number_of_included_branches() == matrix_size - 1:
-        return
-    for i in range(matrix_size):
-        if i == j:
-            continue
-        branch_to_exclude = Branch(i, j)
-        if branch_to_exclude in solution.branches.keys():
-            continue
-        if has_included_adjacents(solution, branch_to_exclude):
-            solution.branches[branch_to_exclude] = False
-            return
-
+        return did_exclude
+    j = branch.nodeA
+    m = branch.nodeB
+    if solution.has_two_adjacents_to_node(m):
+        for i in range(matrix_size):
+            if i == j:
+                continue
+            branch_to_exclude = Branch(i, j)
+            if branch_to_exclude in solution.branches.keys():
+                continue
+            if has_included_adjacents(solution, branch_to_exclude):
+                solution.branches[branch_to_exclude] = False
+                did_exclude = True
+    if solution.has_two_adjacents_to_node(j):
+        for k in range(matrix_size):
+            if k == m:
+                continue
+            branch_to_exclude = Branch(k, m)
+            if branch_to_exclude in solution.branches.keys():
+                continue
+            if has_included_adjacents(solution, branch_to_exclude):
+                solution.branches[branch_to_exclude] = False
+                did_exclude = True
+    return did_exclude
 
 def has_included_adjacents(solution, branch) -> bool:
     node_a_included = False
@@ -273,14 +340,22 @@ if __name__ == '__main__':
     initial_solution = Solution()
     solutions_queue.enqueue(initial_solution)
     counter = 0
+    start = time.time()
     while solutions_queue.size() > 0:
         current_solution = solutions_queue.dequeue()
         if counter == 0:
             print('Lower bound at start is:', current_solution.current_bound())
         else:
-            print('Current step:', counter, ', current_bound:', current_solution.current_bound())
+            print('Current step:', counter)
         make_branches(current_solution)
         counter += 1
-    print('\nAlgorithm finished')
+    print('Algorithm finished\n')
     print('Best solution is: ', best_solution_record)
     best_solution.print_solution()
+    end = time.time()
+    time_delta = end - start
+    if time_delta < 1:
+        time_delta = round(time_delta, 6)
+    else:
+        time_delta = round(time_delta, 3)
+    print('Time elapsed:', time_delta)
