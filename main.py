@@ -75,7 +75,7 @@ def make_branches(solution):
     if solution.number_of_included_branches() >= matrix_size - 2:
         include_branches_if_needed(solution)
         solution_total_bound = solution.current_bound()
-        print("Tree finished:", solution_total_bound)
+        # print("Tree finished:", solution_total_bound)
         if solution_total_bound < best_solution_record:
             best_solution_record = solution.current_bound()
             best_solution = solution
@@ -109,19 +109,19 @@ def make_branches(solution):
             s1_bound = new_solution1.current_bound()
             if s1_bound <= best_solution_record and new_solution1.impossible is False:
                 solutions_queue.enqueue(new_solution1)
-            else:
-                if new_solution1.impossible is True:
-                    print('Impossible solution, pruned.')
-                else:
-                    print('Solution pruned: ', best_solution_record, "<", new_solution1.current_bound())
+            # else:
+            #     if new_solution1.impossible is True:
+                    # print('Impossible solution, pruned.')
+                # else:
+                    # print('Solution pruned: ', best_solution_record, "<", new_solution1.current_bound())
             s2_bound = new_solution2.current_bound()
             if s2_bound <= best_solution_record and new_solution2.impossible is False:
                 solutions_queue.enqueue(new_solution2)
-            else:
-                if new_solution2.impossible is True:
-                    print('Impossible solution, pruned.')
-                else:
-                    print('Solution pruned: ', best_solution_record, "<", new_solution2.current_bound())
+            # else:
+            #     if new_solution2.impossible is True:
+            #         print('Impossible solution, pruned.')
+            #     else:
+            #         print('Solution pruned: ', best_solution_record, "<", new_solution2.current_bound())
             return
 
 # def update_solution_with_missing_branches(solution):
@@ -341,15 +341,20 @@ if __name__ == '__main__':
     solutions_queue.enqueue(initial_solution)
     counter = 0
     start = time.time()
+
+    f = open('test_' + matrix_size + '.txt', "w+")
+
     while solutions_queue.size() > 0:
         current_solution = solutions_queue.dequeue()
         if counter == 0:
             print('Lower bound at start is:', current_solution.current_bound())
-        else:
-            print('Current step:', counter)
+        # else:
+            # print('Current step:', counter)
         make_branches(current_solution)
         counter += 1
+        f.write(str(counter) + ' ' + str(solutions_queue.size()) + "\n")
     print('Algorithm finished\n')
+    print('Number of tasks', counter)
     print('Best solution is: ', best_solution_record)
     best_solution.print_solution()
     end = time.time()
