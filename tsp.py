@@ -33,7 +33,8 @@ if path == "":
 def parsefile(filepath):
     try:
         mtx = np.loadtxt(filepath, dtype='int')
-        print('Input Matrix:\n', mtx)
+        if testing is False:
+            print('Input Matrix:\n', mtx)
         return mtx
     except IOError:
         print("Error: file could not be opened")
@@ -345,7 +346,7 @@ if __name__ == '__main__':
 
     while solutions_queue.size() > 0:
         current_solution = solutions_queue.dequeue()
-        if counter == 0:
+        if counter == 0 and testing is False:
             print('Lower bound at start is:', current_solution.current_bound())
         make_branches(current_solution)
         counter += 1
