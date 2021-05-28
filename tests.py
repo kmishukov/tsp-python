@@ -5,7 +5,7 @@ import subprocess
 path = 'tests/input/'
 result_path = 'tests.txt'
 
-print(os.getcwd() + path)
+print(os.getcwd() + '/' + path)
 
 if os.path.exists(result_path):
     print('File tests.txt already exists, rewrite? (y or n)')
