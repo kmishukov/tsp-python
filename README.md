@@ -1,6 +1,6 @@
 # TSP-Python
 
-## This program is used to solve symmetric Traveling Salesman Problem using branch and bound technique.
+## This program is used to solve symmetric Traveling Salesman Problem using branch and bound technique. Traveling sales problem is a task to find shortest route to visit all points and return to origin.
 
 ### Install requirements:
 
