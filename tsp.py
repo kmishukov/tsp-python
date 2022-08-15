@@ -13,11 +13,11 @@ testing = False
 try:
     opts, args = getopt.getopt(sys.argv[1:], "hi:t", ["ifile="])
 except getopt.GetoptError:
-    print('tsp.py -i <inputfile>')
+    print('tsp.py -i <input-file>')
     sys.exit(2)
 for opt, arg in opts:
     if opt == '-h':
-        print('tsp.py -i <inputfile>')
+        print('tsp.py -i <input-file>')
         sys.exit()
     elif opt == '-t':
         testing = True
@@ -26,7 +26,7 @@ for opt, arg in opts:
 
 if path == "":
     print('Missing parameters.')
-    print('tsp.py -i <inputfile>')
+    print('tsp.py -i <input-file>')
     sys.exit(2)
 
 
@@ -43,11 +43,6 @@ def parsefile(filepath):
 
 matrix = parsefile(path)
 matrix_size: int = len(matrix)
-
-maxsize = float('inf')
-best_solution_record = float('inf')
-best_solution = None
-solutions_queue = Queue()
 
 
 # Calculate lower bound on any given solution (step);
@@ -82,7 +77,7 @@ def make_branches(solution):
                 print('Record updated:', best_solution_record)
         return
     for i in range(matrix_size):
-        if solution.has_two_adjacents_to_node(i):
+        if solution.has_two_adjacent_to_node(i):
             continue
         for j in range(matrix_size):
             if i == j:
@@ -96,43 +91,19 @@ def make_branches(solution):
             new_solution1.branches[current_branch] = True
             new_solution1.update_solution_with_missing_branches_if_needed(current_branch)
 
-            # if new_solution1.has_two_adjacents_to_node(i):
-            # exclude_possible_short_circuit_after_adding_branch(new_solution1, current_branch)
-            # exclude_branches_for_filled_nodes(new_solution1)
-
             new_solution2 = Solution()
             new_solution2.branches = solution.branches.copy()
             new_solution2.branches[current_branch] = False
             new_solution2.update_solution_with_missing_branches_if_needed(None)
-            # include_branches_if_needed(new_solution2)
 
             s1_bound = new_solution1.current_bound()
             if s1_bound <= best_solution_record and new_solution1.impossible is False:
                 solutions_queue.enqueue(new_solution1)
-            # else:
-            #     if new_solution1.impossible is True:
-                    # print('Impossible solution, pruned.')
-                # else:
-                    # print('Solution pruned: ', best_solution_record, "<", new_solution1.current_bound())
+
             s2_bound = new_solution2.current_bound()
             if s2_bound <= best_solution_record and new_solution2.impossible is False:
                 solutions_queue.enqueue(new_solution2)
-            # else:
-            #     if new_solution2.impossible is True:
-            #         print('Impossible solution, pruned.')
-            #     else:
-            #         print('Solution pruned: ', best_solution_record, "<", new_solution2.current_bound())
             return
-
-# def update_solution_with_missing_branches(solution):
-#     did_change = True
-#     added_branch = None
-#     while did_change is True:
-#         if added_branch != None:
-#             did_change = exclude_possible_short_circuit_after_adding_branch(added_branch)
-#             added_branch = None
-
-
 
 
 class Branch:
@@ -188,12 +159,12 @@ class Solution:
             summary += first_minimum + second_minimum
         return summary * 0.5
 
-    def has_two_adjacents_to_node(self, node):
-        adjacents_counter = 0
+    def has_two_adjacent_to_node(self, node):
+        adjacent_counter = 0
         for branch in self.branches.keys():
             if branch.is_incident_to(node) and self.branches[branch] is True:
-                adjacents_counter += 1
-                if adjacents_counter == 2:
+                adjacent_counter += 1
+                if adjacent_counter == 2:
                     return True
         return False
 
@@ -208,7 +179,7 @@ class Solution:
         if self.number_of_included_branches() != matrix_size:
             print('Error: tried printing not complete solution.')
             return
-        path = '0'
+        solution_path = '0'
         zero_branches = []
         true_branches = []
         for branch in self.branches.keys():
@@ -220,14 +191,15 @@ class Solution:
         current_branch = (zero_branches[0], zero_branches[1])[zero_branches[0].nodeA < zero_branches[1].nodeB]
         current_node = current_branch.nodeB
         while current_node != 0:
-            path += str(current_node)
+            solution_path += '-'
+            solution_path += str(current_node)
             for branch in true_branches:
                 if branch.is_incident_to(current_node) and branch != current_branch:
                     current_node = (branch.nodeA, branch.nodeB)[branch.nodeA == current_node]
                     current_branch = branch
                     break
-        path += '0'
-        print("Solution Path:", path)
+        solution_path += '-0'
+        print("Solution path:", solution_path)
 
     def update_solution_with_missing_branches_if_needed(self, added_branch):
         did_change = True
@@ -239,20 +211,16 @@ class Solution:
                 did_exclude = exclude_possible_short_circuit_after_adding_branch(self, new_branch)
             else:
                 did_exclude = False
-            # if did_exclude is True or did_change is True:
             new_branch = include_branches_if_needed(self)
             if new_branch == Branch(-1, -1):
                 self.impossible = True
                 return
-            # else:
-            #     new_branch = None
-
 
 
 def exclude_branches_for_filled_nodes(solution) -> bool:
     did_change = False
     for i in range(matrix_size):
-        if solution.has_two_adjacents_to_node(i):
+        if solution.has_two_adjacent_to_node(i):
             for j in range(matrix_size):
                 if i == j:
                     continue
@@ -263,7 +231,6 @@ def exclude_branches_for_filled_nodes(solution) -> bool:
     return did_change
 
 
-
 def include_branches_if_needed(solution) -> Optional[Branch]:
     for i in range(matrix_size):
         number_of_excluded_branches = 0
@@ -271,8 +238,6 @@ def include_branches_if_needed(solution) -> Optional[Branch]:
             if b.is_incident_to(i) and solution.branches[b] is False:
                 number_of_excluded_branches += 1
         if number_of_excluded_branches > matrix_size - 3:
-            # print("Error in number of excluded branches on node: ", i)
-            # print('Impossible solution')
             return Branch(-1, -1)
         if number_of_excluded_branches == matrix_size - 3:
             for j in range(matrix_size):
@@ -280,12 +245,10 @@ def include_branches_if_needed(solution) -> Optional[Branch]:
                     continue
                 current_branch = Branch(i, j)
                 if current_branch not in solution.branches.keys():
-                    # print('ibin: adding Branch: ', current_branch)
                     solution.branches[current_branch] = True
                     return current_branch
-                    # if solution.has_two_adjacents_to_node(i):
-                    # exclude_possible_short_circuit_after_adding_branch(solution, current_branch)
     return None
+
 
 def exclude_possible_short_circuit_after_adding_branch(solution, branch: Branch) -> bool:
     did_exclude = False
@@ -293,29 +256,30 @@ def exclude_possible_short_circuit_after_adding_branch(solution, branch: Branch)
         return did_exclude
     j = branch.nodeA
     m = branch.nodeB
-    if solution.has_two_adjacents_to_node(m):
+    if solution.has_two_adjacent_to_node(m):
         for i in range(matrix_size):
             if i == j:
                 continue
             branch_to_exclude = Branch(i, j)
             if branch_to_exclude in solution.branches.keys():
                 continue
-            if has_included_adjacents(solution, branch_to_exclude):
+            if has_included_adjacent(solution, branch_to_exclude):
                 solution.branches[branch_to_exclude] = False
                 did_exclude = True
-    if solution.has_two_adjacents_to_node(j):
+    if solution.has_two_adjacent_to_node(j):
         for k in range(matrix_size):
             if k == m:
                 continue
             branch_to_exclude = Branch(k, m)
             if branch_to_exclude in solution.branches.keys():
                 continue
-            if has_included_adjacents(solution, branch_to_exclude):
+            if has_included_adjacent(solution, branch_to_exclude):
                 solution.branches[branch_to_exclude] = False
                 did_exclude = True
     return did_exclude
 
-def has_included_adjacents(solution, branch) -> bool:
+
+def has_included_adjacent(solution, branch) -> bool:
     node_a_included = False
     node_b_included = False
     included_branches = []
@@ -337,12 +301,15 @@ def are_incident(branch1: Branch, branch2: Branch) -> bool:
 
 
 if __name__ == '__main__':
+    maxsize = float('inf')
     initial_solution = Solution()
+    best_solution = initial_solution
+    best_solution_record = float('inf')
+
+    solutions_queue = Queue()
     solutions_queue.enqueue(initial_solution)
     counter = 0
     start = time.time()
-
-    # f = open('test_' + matrix_size + '.txt', "w+")
 
     while solutions_queue.size() > 0:
         current_solution = solutions_queue.dequeue()
@@ -352,8 +319,8 @@ if __name__ == '__main__':
         counter += 1
     if testing is False:
         print('Algorithm finished\n')
-        print('Number of tasks', counter)
-        print('Best solution is: ', best_solution_record)
+        print('Number of tasks:', counter)
+        print('Best solution:', best_solution_record)
         best_solution.print_solution()
     end = time.time()
     time_delta = end - start
@@ -362,8 +329,8 @@ if __name__ == '__main__':
     else:
         time_delta = round(time_delta, 3)
     if testing is False:
-        print('Time elapsed:', time_delta)
+        print('Time elapsed:', time_delta, 'seconds\n')
     if testing is True:
-        answer = str(matrix_size) + ' ' + str(counter)+ ' ' + str(time_delta)
-        file = open("tests.txt", 'a')
+        answer = str(matrix_size) + ' ' + str(counter) + ' ' + str(time_delta)
+        file = open("tests/tests.txt", 'a')
         file.write(answer + '\n')

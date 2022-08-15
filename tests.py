@@ -3,16 +3,16 @@ import sys
 import subprocess
 
 path = 'tests/input/'
-result_path = 'tests.txt'
+result_path = 'tests/tests.txt'
 
 print(os.getcwd() + '/' + path)
 
 if os.path.exists(result_path):
     print('File tests.txt already exists, rewrite? (y or n)')
-    inpt = input()
+    input_string = input()
     answer = ''
     try:
-        answer = str(inpt)
+        answer = str(input_string)
     except:
         print('Wrong input')
         sys.exit(2)
@@ -27,7 +27,7 @@ for filename in os.listdir(os.getcwd() + '/' + path):
         print(call)
         subprocess.call(call, shell=True)
 
-file = open('tests.txt', 'r')
+file = open(result_path, 'r')
 print("\nResults:")
 for line in file:
     print(line.strip())
