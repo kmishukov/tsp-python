@@ -6,10 +6,6 @@
 
 ``pip install requirements.txt``
 
-### Usage example:
-
-``python3.9.exe tsp.py -i matrix.txt``
-
 ### Matrix prerequesites: 
 
 - Matrix must be symmetric and in a .txt file.
@@ -25,5 +21,7 @@
 ``8 7 7 2 6 5 5 4 0 4``\
 ``9 9 2 5 5 5 7 2 4 0``
 
+### Usage example:
 
+``python3.9.exe tsp.py -i matrix.txt``
 
