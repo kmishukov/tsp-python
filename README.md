@@ -25,3 +25,8 @@
 
 ``python3.9.exe tsp.py -i matrix.txt``
 
+### Sample output:
+
+``Best solution: 38.0``  
+``Solution path: 0-5-2-9-4-7-6-8-3-1-0``  
+``Time elapsed: 3.958 seconds``
